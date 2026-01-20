@@ -56,25 +56,25 @@ macOS: V2Box, Clash Verge Rev
 ## 🔧 常用维护命令
 Xray 安装为系统服务，你可以使用标准的 systemctl 命令进行管理：
 
-# 启动/停止/重启
+### 启动/停止/重启
 ```Bash
 systemctl start xray    # 启动
 systemctl stop xray     # 停止
 systemctl restart xray  # 重启 (修改配置后必须执行)
 ```
 
-# 查看状态
+### 查看状态
 ```Bash
 systemctl status xray
 ```
 如果显示绿色的 active (running) 表示运行正常。
 
-# 查看实时日志 (排查连接问题)
+### 查看实时日志 (排查连接问题)
 ```Bash
 journalctl -u xray -f
 ```
 
-# 修改配置文件
+### 修改配置文件
 配置文件路径位于：/usr/local/etc/xray/config.json
 ```Bash
 nano /usr/local/etc/xray/config.json
