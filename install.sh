@@ -41,6 +41,10 @@ read -p "请输入端口号 [默认: 34567]: " PORT
 read -p "请输入伪装域名 (SNI) [默认: www.bing.com]: " SNI
 [[ -z "${SNI}" ]] && SNI="www.bing.com"
 
+# 设置链接名称
+read -p "请输入链接备注名称 [默认: zdaben]: " LINK_NAME
+[[ -z "${LINK_NAME}" ]] && LINK_NAME="zdaben"
+
 # 4. 安装 Xray 官方内核
 echo -e "${YELLOW}[4/6] 安装 Xray 最新内核...${PLAIN}"
 bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install > /dev/null 2>&1
@@ -55,10 +59,20 @@ echo -e "${YELLOW}[5/6] 生成配置...${PLAIN}"
 
 # 生成 UUID
 UUID=$(xray uuid)
-# 生成密钥对
+
+# 生成密钥对 (根据用户提供的特殊输出格式进行解析)
+# 用户反馈格式: 
+# PrivateKey: xxx
+# Password: xxx (对应 Public Key)
 KEYS=$(xray x25519)
-PRIVATE_KEY=$(echo "$KEYS" | grep "Private" | awk '{print $3}')
-PUBLIC_KEY=$(echo "$KEYS" | grep "Public" | awk '{print $3}')
+PRIVATE_KEY=$(echo "$KEYS" | grep "PrivateKey" | awk '{print $2}')
+PUBLIC_KEY=$(echo "$KEYS" | grep "Password" | awk '{print $2}')
+
+# 如果上面的解析失败（兼容标准版 Xray），尝试标准格式
+if [[ -z "$PUBLIC_KEY" ]]; then
+    PRIVATE_KEY=$(echo "$KEYS" | grep "Private" | awk '{print $3}')
+    PUBLIC_KEY=$(echo "$KEYS" | grep "Public" | awk '{print $3}')
+fi
 
 # 写入配置文件
 cat > /usr/local/etc/xray/config.json <<EOF
@@ -127,8 +141,9 @@ echo -e "${YELLOW}[6/6] 生成连接信息...${PLAIN}"
 # 获取本机 IP
 IP=$(curl -s4m8 ifconfig.me)
 
-# 拼接 VLESS 链接
-LINK="vless://${UUID}@${IP}:${PORT}?encryption=none&flow=xtls-rprx-vision&security=reality&sni=${SNI}&fp=chrome&pbk=${PUBLIC_KEY}&type=tcp&headerType=none#Zdaben_Node"
+# 拼接 VLESS 链接 (使用 URL 编码处理名称中的特殊字符，虽然这里主要是英文)
+# 也就是最后 #后面加上用户自定义的名字
+LINK="vless://${UUID}@${IP}:${PORT}?encryption=none&flow=xtls-rprx-vision&security=reality&sni=${SNI}&fp=chrome&pbk=${PUBLIC_KEY}&type=tcp&headerType=none#${LINK_NAME}"
 
 echo -e "${GREEN}============================================${PLAIN}"
 echo -e "${GREEN}           安装成功！配置如下：             ${PLAIN}"
